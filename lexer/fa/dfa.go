@@ -35,3 +35,5 @@ func (D *DFA) PrintDFA() {
 	fmt.Println("----------------------Term Status------------------------")
 	fmt.Println(D.TerminalStatus)
 }
+
+// todo: DFA drive function
