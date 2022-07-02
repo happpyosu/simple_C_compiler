@@ -70,3 +70,55 @@ func (A *AbstractParser) SetInputTokens(tokens []Token) *AbstractParser {
 	A.InputTokens = tokens
 	return A
 }
+
+func (A *AbstractParser) FirstSet() map[Token]TokenSet {
+	a := make(map[Token]TokenSet)
+	b := make(map[Token]TokenSet)
+	for _, item := range A.NonTermSymbolSet.toTokenList() {
+		a[item] = *NewTokenSet()
+		b[item] = *NewTokenSet()
+	}
+
+	for !A.doFirstSetOneStep(a, b) {
+		// deep copy b to a
+		a = make(map[Token]TokenSet)
+		for tk, tks := range b {
+			a[tk] = tks
+		}
+	}
+
+	return a
+}
+
+// unchanged point method for computing the first set, the function will return true if the token set a equals b.
+func (A *AbstractParser) doFirstSetOneStep(a, b map[Token]TokenSet) bool {
+	for leftToken, dev := range A.Derivations {
+		tkSet := b[leftToken]
+		for _, rightToken := range dev {
+			startTk := rightToken[0]
+
+			if A.TermSymbolSet.hasToken(startTk) {
+				tkSet.addTokens(startTk)
+			} else if A.NonTermSymbolSet.hasToken(startTk) {
+				fistSetOfStartTk := b[startTk]
+				tkSet.addTokens(fistSetOfStartTk.toTokenList()...)
+			}
+		}
+	}
+
+	for tk, tks := range a {
+		tksOfb := b[tk]
+		if !tks.equals(&tksOfb) {
+			return false
+		}
+	}
+
+	for tk, tks := range b {
+		tksOfa := a[tk]
+		if !tks.equals(&tksOfa) {
+			return false
+		}
+	}
+
+	return true
+}

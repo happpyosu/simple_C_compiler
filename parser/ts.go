@@ -22,3 +22,27 @@ func (T *TokenSet) addTokens(tks ...Token) {
 		T.ts[tk] = true
 	}
 }
+
+func (T *TokenSet) toTokenList() []Token {
+	res := make([]Token, 0)
+	for tk := range T.ts {
+		res = append(res, tk)
+	}
+	return res
+}
+
+func (T *TokenSet) equals(tks *TokenSet) bool {
+	for tk := range tks.ts {
+		if !T.ts[tk] {
+			return false
+		}
+	}
+
+	for tk := range T.ts {
+		if !tks.ts[tk] {
+			return false
+		}
+	}
+
+	return true
+}
