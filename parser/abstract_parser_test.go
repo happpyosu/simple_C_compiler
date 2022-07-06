@@ -2,7 +2,7 @@ package parser
 
 import "testing"
 
-func initAbstractParser() *AbstractParser {
+func GetTestSyntaxAndInput() (*Syntax, []Token) {
 	var S Token
 	var N Token
 	var V Token
@@ -44,10 +44,18 @@ func initAbstractParser() *AbstractParser {
 	}
 
 	input := []Token{s, d, w}
-	parser := NewAbstractParser()
-	parser.SetStartSymbol(S).SetNonTermSymbols(S, N, V).SetTermSymbols(s, t, g, w, e, d).SetDerivations(dev).SetInputTokens(input)
 
-	return &parser
+	stx := NewSyntax()
+	stx.SetStartSymbol(S).SetNonTermSymbols(S, N, V).SetTermSymbols(s, t, g, w, e, d).SetDerivations(dev)
+
+	return stx, input
+}
+
+func initAbstractParser() *AbstractParser {
+	stx, input := GetTestSyntaxAndInput()
+	abstractParser := NewAbstractParser(stx, input)
+
+	return &abstractParser
 }
 
 func TestAbstractParser_FirstSet(t *testing.T) {

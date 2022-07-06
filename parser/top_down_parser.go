@@ -6,16 +6,16 @@ type TopDownParser struct {
 	//stack []Token
 }
 
-func NewTopDownParser() *TopDownParser {
+func NewTopDownParser(syntax *Syntax, inputTks []Token) *TopDownParser {
 	return &TopDownParser{
-		AbstractParser: NewAbstractParser(),
+		AbstractParser: NewAbstractParser(syntax, inputTks),
 	}
 
 }
 
 func (T *TopDownParser) parse() bool {
 	stack := make([]Token, 0)
-	startSymbol := T.GetStartSymbol()
+	startSymbol := T.Syntax.GetStartSymbol()
 
 	stack = append(stack, startSymbol)
 
@@ -31,7 +31,7 @@ func (T *TopDownParser) recurParse(stack []Token) bool {
 	hasNonTermSymbol := false
 	nonTermIndex := 0
 	for index, token := range stack {
-		if T.NonTermSymbolSet.hasToken(token) {
+		if T.Syntax.NonTermSymbolSet.hasToken(token) {
 			hasNonTermSymbol = true
 			nonTermIndex = index
 			break
@@ -46,10 +46,10 @@ func (T *TopDownParser) recurParse(stack []Token) bool {
 		}
 
 		for i := nonTermIndex; i < len(stack); i++ {
-			if T.NonTermSymbolSet.hasToken(stack[i]) {
+			if T.Syntax.NonTermSymbolSet.hasToken(stack[i]) {
 				// do the derivation
 				nonTermSymbol := stack[i]
-				possibleRightHands := T.Derivations[nonTermSymbol]
+				possibleRightHands := T.Syntax.Derivations[nonTermSymbol]
 
 				for _, derivation := range possibleRightHands {
 					newStack := make([]Token, 0)

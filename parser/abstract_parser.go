@@ -4,10 +4,10 @@ type Parser interface {
 	parse() bool
 }
 
-type AbstractParser struct {
-	StartSymbol      Token    // the start symbol of the Syntactic Analysis
-	TermSymbolSet    TokenSet // the terminal symbol set
-	NonTermSymbolSet TokenSet // the non-terminal symbol set
+type Syntax struct {
+	StartSymbol      Token     // the start symbol of the Syntactic Analysis
+	TermSymbolSet    *TokenSet // the terminal symbol set
+	NonTermSymbolSet *TokenSet // the non-terminal symbol set
 
 	// the derivations of the syntax, we use a two-dimension array to represent the derivation relations, for example,
 	// consider we have the following syntax:
@@ -24,6 +24,44 @@ type AbstractParser struct {
 	//	V: [e], [d]
 	//}
 	Derivations map[Token][][]Token
+}
+
+func NewSyntax() *Syntax {
+	return &Syntax{
+		StartSymbol:      0,
+		TermSymbolSet:    NewTokenSet(),
+		NonTermSymbolSet: NewTokenSet(),
+		Derivations:      nil,
+	}
+
+}
+
+func (S *Syntax) SetStartSymbol(token Token) *Syntax {
+	S.StartSymbol = token
+	return S
+}
+
+func (S *Syntax) SetTermSymbols(tokes ...Token) *Syntax {
+	S.TermSymbolSet.addTokens(tokes...)
+	return S
+}
+
+func (S *Syntax) SetNonTermSymbols(tokes ...Token) *Syntax {
+	S.NonTermSymbolSet.addTokens(tokes...)
+	return S
+}
+
+func (S *Syntax) SetDerivations(dev map[Token][][]Token) *Syntax {
+	S.Derivations = dev
+	return S
+}
+
+func (S *Syntax) GetStartSymbol() Token {
+	return S.StartSymbol
+}
+
+type AbstractParser struct {
+	Syntax      *Syntax
 	InputTokens []Token // the input tokens
 }
 
@@ -32,38 +70,11 @@ func (A *AbstractParser) parse() bool {
 	return false
 }
 
-func (A *AbstractParser) GetStartSymbol() Token {
-	return A.StartSymbol
-}
-
-func NewAbstractParser() AbstractParser {
+func NewAbstractParser(syntax *Syntax, inputTks []Token) AbstractParser {
 	return AbstractParser{
-		StartSymbol:      0,
-		TermSymbolSet:    *NewTokenSet(),
-		NonTermSymbolSet: *NewTokenSet(),
-		Derivations:      nil,
-		InputTokens:      nil,
+		Syntax:      syntax,
+		InputTokens: inputTks,
 	}
-}
-
-func (A *AbstractParser) SetStartSymbol(token Token) *AbstractParser {
-	A.StartSymbol = token
-	return A
-}
-
-func (A *AbstractParser) SetTermSymbols(tokes ...Token) *AbstractParser {
-	A.TermSymbolSet.addTokens(tokes...)
-	return A
-}
-
-func (A *AbstractParser) SetNonTermSymbols(tokes ...Token) *AbstractParser {
-	A.NonTermSymbolSet.addTokens(tokes...)
-	return A
-}
-
-func (A *AbstractParser) SetDerivations(dev map[Token][][]Token) *AbstractParser {
-	A.Derivations = dev
-	return A
 }
 
 func (A *AbstractParser) SetInputTokens(tokens []Token) *AbstractParser {
@@ -74,7 +85,7 @@ func (A *AbstractParser) SetInputTokens(tokens []Token) *AbstractParser {
 func (A *AbstractParser) FirstSet() map[Token]TokenSet {
 	a := make(map[Token]TokenSet)
 	b := make(map[Token]TokenSet)
-	for _, item := range A.NonTermSymbolSet.toTokenList() {
+	for _, item := range A.Syntax.NonTermSymbolSet.toTokenList() {
 		a[item] = *NewTokenSet()
 		b[item] = *NewTokenSet()
 	}
@@ -92,14 +103,14 @@ func (A *AbstractParser) FirstSet() map[Token]TokenSet {
 
 // unchanged point method for computing the first set, the function will return true if the token set a equals b.
 func (A *AbstractParser) doFirstSetOneStep(a, b map[Token]TokenSet) bool {
-	for leftToken, dev := range A.Derivations {
+	for leftToken, dev := range A.Syntax.Derivations {
 		tkSet := b[leftToken]
 		for _, rightToken := range dev {
 			startTk := rightToken[0]
 
-			if A.TermSymbolSet.hasToken(startTk) {
+			if A.Syntax.TermSymbolSet.hasToken(startTk) {
 				tkSet.addTokens(startTk)
-			} else if A.NonTermSymbolSet.hasToken(startTk) {
+			} else if A.Syntax.NonTermSymbolSet.hasToken(startTk) {
 				fistSetOfStartTk := b[startTk]
 				tkSet.addTokens(fistSetOfStartTk.toTokenList()...)
 			}
@@ -121,4 +132,26 @@ func (A *AbstractParser) doFirstSetOneStep(a, b map[Token]TokenSet) bool {
 	}
 
 	return true
+}
+
+func (A *AbstractParser) getDerivationsNum() int {
+	num := 0
+	for _, dev := range A.Syntax.Derivations {
+		num += len(dev)
+	}
+	return num
+}
+
+func (A *AbstractParser) GetDerivationByIndex(index int) []Token {
+	idx := 0
+	for _, devs := range A.Syntax.Derivations {
+		for _, d := range devs {
+			if idx == index {
+				return d
+			}
+			idx++
+		}
+	}
+	panic("[GetDerivationByIndex]: out of range")
+	return nil
 }

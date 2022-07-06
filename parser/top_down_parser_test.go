@@ -43,11 +43,12 @@ func TestTopDownParser(t_ *testing.T) {
 		},
 	}
 
+	stx := NewSyntax()
+	stx.SetStartSymbol(S).SetNonTermSymbols(S, N, V).SetTermSymbols(s, t, g, w, e, d).SetDerivations(dev)
+
 	input := []Token{s, d, w}
+	topDownParser := NewTopDownParser(stx, input)
 
-	parser := NewTopDownParser()
-	parser.SetStartSymbol(S).SetNonTermSymbols(S, N, V).SetTermSymbols(s, t, g, w, e, d).SetDerivations(dev).SetInputTokens(input)
-
-	println(parser.parse())
+	t_.Log(topDownParser.parse())
 
 }
