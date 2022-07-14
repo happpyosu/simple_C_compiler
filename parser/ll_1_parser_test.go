@@ -7,5 +7,6 @@ func TestLL1Parser(t_ *testing.T) {
 
 	ll1Parser := NewLL1Parser(stx, inputs)
 
-	t_.Log(ll1Parser.BuiltLL1ParsingTable())
+	parsingTable := ll1Parser.BuildLL1ParsingTable()
+	t_.Log(parsingTable)
 }

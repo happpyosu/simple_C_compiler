@@ -14,33 +14,39 @@ func NewLL1Parser(syntax *Syntax, inputTks []Token) *LL1Parser {
 
 }
 
-func (L *LL1Parser) BuiltLL1ParsingTable() map[Token]map[Token]int {
+func (L *LL1Parser) BuildLL1ParsingTable() map[Token]map[Token]int {
 	// the parsing table
 	pTable := make(map[Token]map[Token]int)
 
-	// build the first set
-	firstSet := L.FirstSet()
+	// firstSet for
+	firstSetForSentences := L.FirstSetForSentences()
 
-	// derivation index
-	dIndex := 0
+	// derivation num
+	dNum := L.Syntax.GetDerivationNum()
 
-	// traversal the derivations
-	for ntk, devs := range L.Syntax.Derivations {
+	for i := 0; i < dNum; i++ {
+		// get the first_S for ith dev
+		oneS := firstSetForSentences[i]
 
-		// init the pTable for the non-term symbol
-		pTable[ntk] = make(map[Token]int)
+		// get the ith dev
+		oneDev := L.Syntax.GetDerivationByIndex(i)
 
-		// the first set for the given non-term symbol
-		firstSetOfNtk := firstSet[ntk]
+		var ntk Token
+		for k, _ := range oneDev {
+			ntk = k
+			break
+		}
 
-		for range devs {
-			for _, ttk := range firstSetOfNtk.toTokenList() {
-				pTable[ntk][ttk] = dIndex
-			}
-			dIndex++
+		if nil == pTable[ntk] {
+			pTable[ntk] = make(map[Token]int)
+		}
+
+		for _, tk := range oneS.toTokenList() {
+			pTable[ntk][tk] = i
 		}
 
 	}
 
 	return pTable
+
 }

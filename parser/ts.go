@@ -1,16 +1,27 @@
 package parser
 
+import "sort"
+
 type Token uint64
 
 // TokenSet maintains the collection of the tokens
 type TokenSet struct {
-	ts map[Token]bool
+	orderedList []Token // used for save the ordered token
+
+	ts map[Token]bool // used for fast indexing
 }
 
-func NewTokenSet() *TokenSet {
+func NewEmptyTokenSet() *TokenSet {
 	return &TokenSet{
-		ts: make(map[Token]bool),
+		orderedList: make([]Token, 0),
+		ts:          make(map[Token]bool),
 	}
+}
+
+func NewTokenSet(tks ...Token) *TokenSet {
+	set := NewEmptyTokenSet()
+	set.addTokens(tks...)
+	return set
 }
 
 func (T *TokenSet) hasToken(tk Token) bool {
@@ -18,17 +29,23 @@ func (T *TokenSet) hasToken(tk Token) bool {
 }
 
 func (T *TokenSet) addTokens(tks ...Token) {
+	//todo: maintain the orderedList
 	for _, tk := range tks {
+		if T.ts[tk] {
+			continue
+		}
 		T.ts[tk] = true
+		T.orderedList = append(T.orderedList, tk)
 	}
+
+	// maintain the token set as asc ranking
+	sort.Slice(T.orderedList, func(i, j int) bool {
+		return T.orderedList[i] < T.orderedList[j]
+	})
 }
 
 func (T *TokenSet) toTokenList() []Token {
-	res := make([]Token, 0)
-	for tk := range T.ts {
-		res = append(res, tk)
-	}
-	return res
+	return T.orderedList
 }
 
 func (T *TokenSet) equals(tks *TokenSet) bool {
