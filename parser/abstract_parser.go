@@ -4,6 +4,8 @@ type Parser interface {
 	parse() bool
 }
 
+var Epsilon Token = 0
+
 type Syntax struct {
 	StartSymbol      Token     // the start symbol of the Syntactic Analysis
 	TermSymbolSet    *TokenSet // the terminal symbol set
@@ -29,6 +31,9 @@ type Syntax struct {
 
 	// the derivations of the syntax, which is accessed by using the index
 	DerivationsIndex []map[Token][]Token
+
+	// empty str, which will directly initialized as zero
+	Epsilon Token
 }
 
 func NewEmptySyntax() *Syntax {
@@ -38,6 +43,7 @@ func NewEmptySyntax() *Syntax {
 		NonTermSymbolSet: NewEmptyTokenSet(),
 		Derivations:      nil,
 		DerivationsIndex: nil,
+		Epsilon:          0,
 	}
 }
 
@@ -47,6 +53,7 @@ func NewSyntax(startSymbol Token, nonTerms, terms []Token, derivations map[Token
 		TermSymbolSet:    NewTokenSet(terms...),
 		NonTermSymbolSet: NewTokenSet(nonTerms...),
 		Derivations:      derivations,
+		Epsilon:          0,
 	}
 	syntax.DerivationsIndex = syntax.initDerivationsIndex()
 	return syntax
@@ -124,6 +131,7 @@ func (A *AbstractParser) SetInputTokens(tokens []Token) *AbstractParser {
 	return A
 }
 
+// FirstSet compute the first set for the given Syntax
 func (A *AbstractParser) FirstSet() map[Token]*TokenSet {
 	a := make(map[Token]*TokenSet)
 	b := make(map[Token]*TokenSet)
@@ -209,4 +217,50 @@ func (A *AbstractParser) FirstSetForSentences() map[int]*TokenSet {
 	}
 
 	return firstS
+}
+
+// NullableSet computes the nullable token set for the given Syntax
+func (A *AbstractParser) NullableSet() *TokenSet {
+	a := NewEmptyTokenSet()
+	b := NewEmptyTokenSet()
+
+	// while b is still changing...
+	for !A.doNullableSetOneStep(a, b) {
+		// deep copy b to a
+		a = NewEmptyTokenSet()
+		a.addTokens(b.toTokenList()...)
+	}
+
+	return a
+}
+
+func (A *AbstractParser) doNullableSetOneStep(a, b *TokenSet) bool {
+	for ntk, devs := range A.Syntax.Derivations {
+
+		for _, dev := range devs {
+			// if we directly encounter a null string
+			if len(dev) == 1 && dev[0] == A.Syntax.Epsilon {
+				b.addTokens(ntk)
+			} else {
+				// otherwise, we have to check if the right side of the derivation are all belongs to the nullable set
+				flag := true
+				for _, tk := range dev {
+					if !b.hasToken(tk) {
+						flag = false
+						break
+					}
+				}
+
+				if flag {
+					b.addTokens(ntk)
+				}
+			}
+
+		}
+	}
+
+	if !a.equals(b) {
+		return false
+	}
+	return true
 }

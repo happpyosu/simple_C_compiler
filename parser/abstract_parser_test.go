@@ -93,3 +93,54 @@ func TestAbstractParser_FirstSetForSentences(t *testing.T) {
 	}
 
 }
+
+func initNullableTestSyntaxAndInput() (*Syntax, []Token) {
+	// ntk
+	var Z Token
+	var Y Token
+	var X Token
+
+	Z = 1
+	Y = 2
+	X = 3
+
+	// tk
+	var d Token
+	var c Token
+	var a Token
+
+	d = 4
+	c = 5
+	a = 6
+
+	// derivations
+	dev := map[Token][][]Token{
+		Z: {
+			{d},
+			{X, Y, Z},
+		},
+
+		Y: {
+			{c},
+			{Epsilon},
+		},
+
+		X: {
+			{Y},
+			{a},
+		},
+	}
+
+	input := []Token{d, c, a}
+	stx := NewSyntax(Z, []Token{Z, Y, X}, []Token{d, c, a}, dev)
+
+	return stx, input
+}
+
+func TestAbstractParser_NullableSet(t *testing.T) {
+	stx, input := initNullableTestSyntaxAndInput()
+	abstractParser := NewAbstractParser(stx, input)
+
+	nullableSet := abstractParser.NullableSet()
+	t.Log(nullableSet)
+}
