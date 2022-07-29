@@ -135,12 +135,15 @@ func (A *AbstractParser) SetInputTokens(tokens []Token) *AbstractParser {
 func (A *AbstractParser) FirstSet() map[Token]*TokenSet {
 	a := make(map[Token]*TokenSet)
 	b := make(map[Token]*TokenSet)
+
+	nullable := A.NullableSet()
+
 	for _, item := range A.Syntax.NonTermSymbolSet.toTokenList() {
 		a[item] = NewEmptyTokenSet()
 		b[item] = NewEmptyTokenSet()
 	}
 
-	for !A.doFirstSetOneStep(a, b) {
+	for !A.doFirstSetOneStep(a, b, nullable) {
 		// deep copy b to a
 		a = make(map[Token]*TokenSet)
 		for tk, tks := range b {
@@ -152,18 +155,31 @@ func (A *AbstractParser) FirstSet() map[Token]*TokenSet {
 }
 
 // unchanged point method for computing the first set, the function will return true if the token set a equals b.
-func (A *AbstractParser) doFirstSetOneStep(a, b map[Token]*TokenSet) bool {
+func (A *AbstractParser) doFirstSetOneStep(a, b map[Token]*TokenSet, nullable *TokenSet) bool {
 	for leftToken, dev := range A.Syntax.Derivations {
 		tkSet := b[leftToken]
-		for _, rightToken := range dev {
-			startTk := rightToken[0]
+		for _, beta := range dev {
 
-			if A.Syntax.TermSymbolSet.hasToken(startTk) {
-				tkSet.addTokens(startTk)
-			} else if A.Syntax.NonTermSymbolSet.hasToken(startTk) {
-				fistSetOfStartTk := b[startTk]
-				tkSet.addTokens(fistSetOfStartTk.toTokenList()...)
+			for _, r := range beta {
+				if A.Syntax.TermSymbolSet.hasToken(r) {
+					tkSet.addTokens(r)
+				} else if A.Syntax.NonTermSymbolSet.hasToken(r) {
+					fistSetOfStartTk := b[r]
+					tkSet.addTokens(fistSetOfStartTk.toTokenList()...)
+					if !nullable.hasToken(r) {
+						break
+					}
+				}
 			}
+
+			//startTk := rightToken[0]
+			//
+			//if A.Syntax.TermSymbolSet.hasToken(startTk) {
+			//	tkSet.addTokens(startTk)
+			//} else if A.Syntax.NonTermSymbolSet.hasToken(startTk) {
+			//	fistSetOfStartTk := b[startTk]
+			//	tkSet.addTokens(fistSetOfStartTk.toTokenList()...)
+			//}
 		}
 	}
 
